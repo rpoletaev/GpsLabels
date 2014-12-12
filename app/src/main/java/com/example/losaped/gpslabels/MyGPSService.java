@@ -1,4 +1,4 @@
-package com.example.losaped.gpssender;
+package com.example.losaped.gpslabels.;
 
 import android.content.Context;
 import android.location.Location;
