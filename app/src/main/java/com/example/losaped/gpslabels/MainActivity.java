@@ -3,6 +3,7 @@ package com.example.losaped.gpslabels;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
+import android.app.PendingIntent;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -10,6 +11,7 @@ import android.content.IntentSender;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
+import android.location.LocationProvider;
 import android.support.v4.app.DialogFragment;
 import android.support.v4.app.FragmentActivity;
 import android.support.v7.app.ActionBarActivity;
@@ -25,92 +27,48 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
-import com.google.android.gms.common.GooglePlayServicesClient;
 import com.google.android.gms.common.GooglePlayServicesUtil;
-import com.google.android.gms.common.api.GoogleApiClient;
-import com.google.android.gms.location.LocationRequest;
-import com.google.android.gms.location.LocationServices;
 
 import java.util.Date;
 
-public class MainActivity extends Activity implements
-        GoogleApiClient.ConnectionCallbacks,
-        GoogleApiClient.OnConnectionFailedListener,
-        LocationListener {
+public class MainActivity extends Activity {
 
     private String AgentName = "";
     private final static int CONNECTION_FAILURE_RESOLUTION_REQUEST = 9000;
-    private GoogleApiClient mApiClient;
-    private LocationRequest mLocationRequest;
-
-    @Override
-    protected void onStart() {
-        super.onStart();
-        // Connect the client.
-        mApiClient.connect();
-    }
-
-    @Override
-    protected void onStop() {
-        // Disconnecting the client invalidates it.
-        mApiClient.disconnect();
-        super.onStop();
-    }
-
-    @Override
-    public void onConnected(Bundle bundle) {
-
-        mLocationRequest = LocationRequest.create();
-        mLocationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
-        mLocationRequest.setInterval(1000); // Update location every second
-
-        LocationServices.FusedLocationApi.requestLocationUpdates(mApiClient, mLocationRequest, this);//(mApiClient, mLocationRequest, this)
-    }
-
-    @Override
-    public void onConnectionSuspended(int i) {
-        Log.i("App", "GoogleApiClient connection has been suspend");
-    }
-
-    @Override
-    public void onLocationChanged(Location location) {
-        TextView coordinatesLbl = (TextView)findViewById(R.id.CoordinatesTxt);
-        coordinatesLbl.setText("Lat: " + Double.toString(location.getLatitude()) + " " + "Long: " + Double.toString(location.getLongitude()));
-    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        ImageButton getCoordinatesBtn = (ImageButton)findViewById(R.id.GetCoordinatesBtn);
-        mApiClient = new GoogleApiClient.Builder(this)
-                .addApi(LocationServices.API)
-                .addConnectionCallbacks(this)
-                .addOnConnectionFailedListener(this)
-                .build();
+        ImageButton getCoordinatesBtn = (ImageButton) findViewById(R.id.GetCoordinatesBtn);
+        ImageButton sendCoordinatesBtn = (ImageButton)findViewById(R.id.SendCoordinatesBtn);
 
         getCoordinatesBtn.setOnClickListener(
-                new View.OnClickListener() {
+                new View.OnClickListener()
+                {
                     @Override
-                    public void onClick(View v) {
-                        TextView coordinatesLbl = (TextView)findViewById(R.id.CoordinatesTxt);
-                        Context context = getApplicationContext();
-                        int status = GooglePlayServicesUtil.isGooglePlayServicesAvailable(context);
-                        if (status == ConnectionResult.SUCCESS)
-                        {
-                            coordinatesLbl.setText("Success");
+                    public void onClick(View v)
+                    {
+                        TextView coordinatesLbl = (TextView) findViewById(R.id.CoordinatesTxt);
+                        TextView timeLbl = (TextView) findViewById(R.id.TimeTxt);
+
+                        try {
+                            Location location = getLocation();
+                            coordinatesLbl.setText("Lat: " + location.getLatitude() + " Long: " + location.getLongitude());
+                            //timeLbl.setText(location.getTime())
+                            timeLbl.setText(DateFormat.format("yyyy-MM-dd kk:mm:ss", new Date()));
                         }
-                        else
+                        catch (Exception e)
                         {
-                            coordinatesLbl.setText("");
+                            coordinatesLbl.setText(e.getMessage());
                         }
-                        TextView timeLbl = (TextView)findViewById(R.id.TimeTxt);
-                        timeLbl.setText(DateFormat.format("yyyy-MM-dd kk:mm:ss", new Date()));
+
+
+
                     }
                 }
         );
 
-        ImageButton sendCoordinatesBtn = (ImageButton)findViewById(R.id.SendCoordinatesBtn);
         sendCoordinatesBtn.setOnClickListener(
                 new View.OnClickListener() {
                     @Override
@@ -120,6 +78,28 @@ public class MainActivity extends Activity implements
                     }
                 }
         );
+    }
+
+    public Location getLocation() {
+        LocationManager locationManager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
+        String provider = "";
+        if (locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
+            provider = LocationManager.GPS_PROVIDER;
+        } else if (locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
+            provider = LocationManager.NETWORK_PROVIDER;
+        } else {
+            Log.d("пать", "Ипать");
+            try {
+                throw new Exception("Не удалось получить провайдера");
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+
+        Intent intent = new Intent(this, getApplicationContext().getClass());
+        locationManager.requestSingleUpdate(provider, PendingIntent.getBroadcast(this, 0, intent, PendingIntent.FLAG_ONE_SHOT));
+
+        return locationManager.getLastKnownLocation(provider);
     }
 
     private void showAgentNameRequest()
