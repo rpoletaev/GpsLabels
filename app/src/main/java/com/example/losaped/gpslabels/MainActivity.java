@@ -26,9 +26,6 @@ import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.google.android.gms.common.ConnectionResult;
-import com.google.android.gms.common.GooglePlayServicesUtil;
-
 import java.util.Date;
 
 public class MainActivity extends Activity {
@@ -54,17 +51,16 @@ public class MainActivity extends Activity {
 
                         try {
                             Location location = getLocation();
-                            coordinatesLbl.setText("Lat: " + location.getLatitude() + " Long: " + location.getLongitude());
-                            //timeLbl.setText(location.getTime())
-                            timeLbl.setText(DateFormat.format("yyyy-MM-dd kk:mm:ss", new Date()));
+                            if (location != null) {
+                                coordinatesLbl.setText("Lat: " + location.getLatitude() + " Long: " + location.getLongitude());
+                                //timeLbl.setText(location.getTime())
+                                timeLbl.setText(DateFormat.format("yyyy-MM-dd kk:mm:ss", new Date()));
+                            }
                         }
                         catch (Exception e)
                         {
                             coordinatesLbl.setText(e.getMessage());
                         }
-
-
-
                     }
                 }
         );
@@ -85,8 +81,10 @@ public class MainActivity extends Activity {
         String provider = "";
         if (locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
             provider = LocationManager.GPS_PROVIDER;
+            Log.d("PROVIDER", provider);
         } else if (locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
             provider = LocationManager.NETWORK_PROVIDER;
+            Log.d("PROVIDER", provider);
         } else {
             Log.d("пать", "Ипать");
             try {
@@ -96,8 +94,8 @@ public class MainActivity extends Activity {
             }
         }
 
-        Intent intent = new Intent(this, getApplicationContext().getClass());
-        locationManager.requestSingleUpdate(provider, PendingIntent.getBroadcast(this, 0, intent, PendingIntent.FLAG_ONE_SHOT));
+        Intent intent = new Intent(this, LocationManager.class);
+        locationManager.requestSingleUpdate(provider, PendingIntent.getBroadcast(this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT));
 
         return locationManager.getLastKnownLocation(provider);
     }
