@@ -2,19 +2,12 @@ package com.example.losaped.gpslabels;
 
 import android.app.Activity;
 import android.app.AlertDialog;
-import android.app.Dialog;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.IntentSender;
 import android.location.Location;
-import android.location.LocationListener;
 import android.location.LocationManager;
-import android.location.LocationProvider;
-import android.support.v4.app.DialogFragment;
-import android.support.v4.app.FragmentActivity;
-import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
 import android.text.format.DateFormat;
 import android.util.Log;
@@ -31,7 +24,6 @@ import java.util.Date;
 public class MainActivity extends Activity {
 
     private String AgentName = "";
-    private final static int CONNECTION_FAILURE_RESOLUTION_REQUEST = 9000;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -79,20 +71,16 @@ public class MainActivity extends Activity {
     public Location getLocation() {
         LocationManager locationManager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
         String provider = "";
-        if (locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
-            provider = LocationManager.GPS_PROVIDER;
-            Log.d("PROVIDER", provider);
-        } else if (locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
+        if (locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
             provider = LocationManager.NETWORK_PROVIDER;
             Log.d("PROVIDER", provider);
-        } else {
-            Log.d("пать", "Ипать");
-            try {
-                throw new Exception("Не удалось получить провайдера");
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+        } else if (locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
+            provider = LocationManager.GPS_PROVIDER;
+            Log.d("PROVIDER", provider);
         }
+        if (provider.equals(""))
+            startActivity(new Intent(android.provider.Settings.ACTION_LOCATION_SOURCE_SETTINGS));
+
 
         Intent intent = new Intent(this, LocationManager.class);
         locationManager.requestSingleUpdate(provider, PendingIntent.getBroadcast(this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT));
